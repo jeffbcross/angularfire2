@@ -3,7 +3,7 @@ import {Observable} from 'rxjs/Observable';
 import {Observer} from 'rxjs/Observer';
 import * as Firebase from 'firebase';
 
-class FirebaseListDecorator {
+class FirebaseObjectDecorator {
   path:string;
   constructor({path}:{path:string}) {
     this.path = path;
@@ -13,9 +13,9 @@ class FirebaseListDecorator {
 /**
  * This is copied from makePropDecorator in Angular.
  */
-export function FirebaseList(...args:any[]): any {
-  var decoratorInstance = Object.create(FirebaseListDecorator.prototype);
-  FirebaseListDecorator.apply(decoratorInstance, args);
+export function FirebaseObject(...args:any[]): any {
+  var decoratorInstance = Object.create(FirebaseObjectDecorator.prototype);
+  FirebaseObjectDecorator.apply(decoratorInstance, args);
 
   return function PropDecorator(target: any, name: string) {
     var meta = Reflect.getOwnMetadata('propMetadata', target.constructor);

@@ -1,6 +1,6 @@
 import 'zone.js';
 import {Component, OnInit, ViewChild} from 'angular2/core';
-import {FirebaseList} from './firebase_list';
+import {FirebaseObject} from './firebase_list';
 import {fakeAsync, beforeEach, fit, inject, it, describe, expect, TestComponentBuilder} from 'angular2/testing';
 import {Observable} from 'rxjs';
 import {VirtualTimeScheduler} from 'rxjs/scheduler/VirtualTimeScheduler';
@@ -16,7 +16,7 @@ Parse5DomAdapter.makeCurrent();
   inputs:[]
 })
 class MyComponent {
-  @FirebaseList({
+  @FirebaseObject({
     path: 'ws://test.firebaseio.com'
   }) foo:any;
 
@@ -28,7 +28,7 @@ class MyComponent {
   template: '<h1>Hi</h1>'
 })
 class MyComponentWithOnInit implements OnInit {
-  @FirebaseList({
+  @FirebaseObject({
     path: 'ws://test.firebaseio.com'
   }) foo:any;
   ngOnInitCalled = false;
