@@ -17,7 +17,7 @@ export function FirebaseList(...args:any[]): any {
   } else {
     return function PropDecorator(target: any, name: string) {
       var meta = Reflect.getOwnMetadata('propMetadata', target.constructor);
-      monkeyPatchOnInit(target.constructor);
+      monkeyPatchOnInit(target);
       meta = meta || {};
       meta[name] = meta[name] || [];
       meta[name].unshift(decoratorInstance);
@@ -27,16 +27,17 @@ export function FirebaseList(...args:any[]): any {
 }
 
 function monkeyPatchOnInit(target:any):void {
-  if (target && target.prototype && typeof target.prototype.ngOnInit === 'function') {
-    target.prototype.ngOnInit = function () {
+  if (target && typeof target.ngOnInit === 'function') {
+    let existingInit = target.ngOnInit;
+    target.ngOnInit = function () {
       // TODO
-      target.prototype.ngOnInit.apply(target, arguments);
-    }
-  } else if (target && target.prototype) {
-    target.prototype.ngOnInit = function () {
+      existingInit.apply(this, arguments);
+    };
+  } else if (target) {
+    target.ngOnInit = function () {
       // TODO
-    }
+    };
   } else {
-    throw `FirebaseList must be applied to a component class. Actual: ${target}`;
+    throw `FirebaseList must be applied to a component instance. Actual: ${target}`;
   }
 }
