@@ -1,25 +1,26 @@
 import 'zone.js';
 import {Component, OnInit, ViewChild} from 'angular2/core';
 import {FirebaseList} from './firebase_list';
-import {fakeAsync, beforeEach, fit, inject, injectAsync, it, describe, expect, TestComponentBuilder} from 'angular2/testing';
+import {fakeAsync, beforeEach, fit, inject, it, describe, expect, TestComponentBuilder} from 'angular2/testing';
 import {Observable} from 'rxjs';
+import {VirtualTimeScheduler} from 'rxjs/scheduler/VirtualTimeScheduler';
 import * as Firebase from 'firebase';
-var MockFirebase = require('mockfirebase').MockFirebase;
+var FirebaseServer = require('firebase-server');
+new FirebaseServer(5000, 'test.firebaseio.com');
 
 import {Parse5DomAdapter} from 'angular2/platform/server';
 Parse5DomAdapter.makeCurrent();
 
 @Component({
-  template: '<h1>Hi</h1>'
+  template: '<h1>Hi</h1>',
+  inputs:[]
 })
 class MyComponent {
-  firebaseRef:Firebase;
   @FirebaseList({
-    foo: 'bar'
+    path: 'ws://test.firebaseio.com'
   }) foo:any;
 
   constructor() {
-    this.firebaseRef = new MockFirebase('https://ng2-forum-demo.firebaseio.com');
   }
 }
 
@@ -28,7 +29,7 @@ class MyComponent {
 })
 class MyComponentWithOnInit implements OnInit {
   @FirebaseList({
-    foo: 'bar'
+    path: 'ws://test.firebaseio.com'
   }) foo:any;
   ngOnInitCalled = false;
   ngOnInit () {
@@ -37,24 +38,10 @@ class MyComponentWithOnInit implements OnInit {
 }
 
 describe('FirebaseList', () => {
-  it('should add an ngOnInit method if one does not exist', inject([TestComponentBuilder], (tcb:TestComponentBuilder) => {
-    tcb.createAsync(MyComponent)
-      .then(f => {
-        expect(typeof f.componentInstance.ngOnInit).toBe('function');
-      });
-  }));
-
-
-  it('should monkey-patch an ngOnInit method if one already exists', inject([TestComponentBuilder], (tcb:TestComponentBuilder) => {
-    tcb.createAsync(MyComponentWithOnInit)
-      .then(f => {
-        expect(f.componentInstance.ngOnInitCalled).toBe(false);
-        f.detectChanges();
-        expect(f.componentInstance.ngOnInitCalled).toBe(true);
-      });
-  }));
-
-
+  afterEach(() => {
+    var fb = new Firebase('ws://test.firebaseio.com');
+    fb.remove();
+  })
   it('should assign an Observable to the designated property', inject([TestComponentBuilder], (tcb:TestComponentBuilder) => {
     tcb.createAsync(MyComponent)
       .then(f => {
@@ -64,22 +51,39 @@ describe('FirebaseList', () => {
   }));
 
 
-  fit('should should pass the array from the ref', injectAsync([TestComponentBuilder], (tcb:TestComponentBuilder) => {
-    return tcb.createAsync(MyComponent)
+  it('should should pass the array from the ref', inject([TestComponentBuilder], (tcb:TestComponentBuilder) => {
+    tcb.createAsync(MyComponent)
       .then(f => {
+        var next = jasmine.createSpy('next');
+        f.detectChanges();
+        f.componentInstance.foo.subscribe(next);
+        f.componentInstance.foo.firebaseRef.push(1);
+        f.componentInstance.foo.firebaseRef.push(2);
+        expect(next.calls.count()).toBe(2);
+      });
+  }));
+
+
+  it('should update the array when a child moves', inject([TestComponentBuilder], (tcb:TestComponentBuilder) => {
+    tcb.createAsync(MyComponent)
+      .then((f) => {
+        var next = jasmine.createSpy('next');
         f.detectChanges();
 
-        var promise = f.componentInstance.foo.map((arr:any[]) => {
-          expect(arr.length).toBe(2);
-          console.log('length', length);
-          return arr;
-        }).toPromise();
-        f.componentInstance.firebaseRef.push(1);
-        f.componentInstance.firebaseRef.push(2);
-        f.componentInstance.firebaseRef.flush();
+        f.componentInstance
+          .foo
+          .subscribe(next);
+        var child1 = f.componentInstance.foo.firebaseRef.push(1);
 
-        return promise;
+        expect(extractRecentValues(next)).toEqual([1]);
+        var child2 = f.componentInstance.foo.firebaseRef.push(2);
+        expect(extractRecentValues(next)).toEqual([1,2]);
+        child1.setPriority('ZZZZ');
+        expect(extractRecentValues(next)).toEqual([2,1]);
       });
   }));
 });
 
+function extractRecentValues(spy:jasmine.Spy):any[] {
+  return spy.calls.mostRecent().args[0].map((v:any) => v.val());
+}
