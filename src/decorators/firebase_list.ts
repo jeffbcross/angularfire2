@@ -36,7 +36,11 @@ function monkeyPatchOnInit(target:any, name:string):void {
 function createOnInitFn(propName:string, fn?:Function):Function {
   return function ngOnInit() {
     this[propName] = Observable.create((obs:Observer<any[]>) => {
-      //TODO
+      var arr:any[] = [];
+      this.firebaseRef.on('child_added', (child:any) => {
+        arr.push(child);
+        obs.next.bind(arr);
+      });
     });
     if (fn) fn.apply(this, arguments);
   }

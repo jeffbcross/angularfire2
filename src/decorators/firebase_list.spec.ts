@@ -1,8 +1,10 @@
 import 'zone.js';
 import {Component, OnInit, ViewChild} from 'angular2/core';
 import {FirebaseList} from './firebase_list';
-import {beforeEach, fit, inject, it, describe, expect, TestComponentBuilder} from 'angular2/testing';
+import {fakeAsync, beforeEach, fit, inject, injectAsync, it, describe, expect, TestComponentBuilder} from 'angular2/testing';
 import {Observable} from 'rxjs';
+import * as Firebase from 'firebase';
+var MockFirebase = require('mockfirebase').MockFirebase;
 
 import {Parse5DomAdapter} from 'angular2/platform/server';
 Parse5DomAdapter.makeCurrent();
@@ -11,9 +13,14 @@ Parse5DomAdapter.makeCurrent();
   template: '<h1>Hi</h1>'
 })
 class MyComponent {
+  firebaseRef:Firebase;
   @FirebaseList({
     foo: 'bar'
   }) foo:any;
+
+  constructor() {
+    this.firebaseRef = new MockFirebase('https://ng2-forum-demo.firebaseio.com');
+  }
 }
 
 @Component({
@@ -53,6 +60,25 @@ describe('FirebaseList', () => {
       .then(f => {
         f.detectChanges();
         expect(f.componentInstance.foo instanceof Observable).toBe(true);
+      });
+  }));
+
+
+  fit('should should pass the array from the ref', injectAsync([TestComponentBuilder], (tcb:TestComponentBuilder) => {
+    return tcb.createAsync(MyComponent)
+      .then(f => {
+        f.detectChanges();
+
+        var promise = f.componentInstance.foo.map((arr:any[]) => {
+          expect(arr.length).toBe(2);
+          console.log('length', length);
+          return arr;
+        }).toPromise();
+        f.componentInstance.firebaseRef.push(1);
+        f.componentInstance.firebaseRef.push(2);
+        f.componentInstance.firebaseRef.flush();
+
+        return promise;
       });
   }));
 });
