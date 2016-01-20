@@ -37,6 +37,7 @@ describe('FirebaseList', () => {
       });
   }));
 
+
   it('should monkey-patch an ngOnInit method if one already exists', inject([TestComponentBuilder], (tcb:TestComponentBuilder) => {
     tcb.createAsync(MyComponentWithOnInit)
       .then(f => {
@@ -45,6 +46,7 @@ describe('FirebaseList', () => {
         expect(f.componentInstance.ngOnInitCalled).toBe(true);
       });
   }));
+
 
   it('should assign an Observable to the designated property', inject([TestComponentBuilder], (tcb:TestComponentBuilder) => {
     tcb.createAsync(MyComponent)

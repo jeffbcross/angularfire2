@@ -29,23 +29,15 @@ export function FirebaseList(...args:any[]): any {
 }
 
 function monkeyPatchOnInit(target:any, name:string):void {
-  if (target && typeof target.ngOnInit === 'function') {
-    let existingInit = target.ngOnInit;
-    target.ngOnInit = function () {
-      // TODO
-      this[name] = Observable.create((obs:Observer<any[]>) => {
-        //TODO
-      });
-      existingInit.apply(this, arguments);
-    };
-  } else if (target) {
-    target.ngOnInit = function () {
-      // TODO
-      this[name] = Observable.create((obs:Observer<any[]>) => {
-        //TODO
-      });
-    };
-  } else {
-    throw `FirebaseList must be applied to a component instance. Actual: ${target}`;
+  let existingInit = target && typeof target.ngOnInit === 'function' ? target.ngOnInit : null;
+  target.ngOnInit = createOnInitFn(name, existingInit);
+}
+
+function createOnInitFn(propName:string, fn?:Function):Function {
+  return function ngOnInit() {
+    this[propName] = Observable.create((obs:Observer<any[]>) => {
+      //TODO
+    });
+    if (fn) fn.apply(this, arguments);
   }
 }
