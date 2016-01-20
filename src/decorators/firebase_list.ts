@@ -1,4 +1,6 @@
 declare var Reflect:any;
+import {Observable} from 'rxjs/Observable';
+import {Observer} from 'rxjs/Observer';
 
 class FirebaseListDecorator {
 }
@@ -17,7 +19,7 @@ export function FirebaseList(...args:any[]): any {
   } else {
     return function PropDecorator(target: any, name: string) {
       var meta = Reflect.getOwnMetadata('propMetadata', target.constructor);
-      monkeyPatchOnInit(target);
+      monkeyPatchOnInit(target, name);
       meta = meta || {};
       meta[name] = meta[name] || [];
       meta[name].unshift(decoratorInstance);
@@ -26,16 +28,22 @@ export function FirebaseList(...args:any[]): any {
   }
 }
 
-function monkeyPatchOnInit(target:any):void {
+function monkeyPatchOnInit(target:any, name:string):void {
   if (target && typeof target.ngOnInit === 'function') {
     let existingInit = target.ngOnInit;
     target.ngOnInit = function () {
       // TODO
+      this[name] = Observable.create((obs:Observer<any[]>) => {
+        //TODO
+      });
       existingInit.apply(this, arguments);
     };
   } else if (target) {
     target.ngOnInit = function () {
       // TODO
+      this[name] = Observable.create((obs:Observer<any[]>) => {
+        //TODO
+      });
     };
   } else {
     throw `FirebaseList must be applied to a component instance. Actual: ${target}`;

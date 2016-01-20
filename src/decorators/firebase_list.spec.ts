@@ -2,6 +2,7 @@ import 'zone.js';
 import {Component, OnInit, ViewChild} from 'angular2/core';
 import {FirebaseList} from './firebase_list';
 import {beforeEach, fit, inject, it, describe, expect, TestComponentBuilder} from 'angular2/testing';
+import {Observable} from 'rxjs';
 
 import {Parse5DomAdapter} from 'angular2/platform/server';
 Parse5DomAdapter.makeCurrent();
@@ -42,6 +43,14 @@ describe('FirebaseList', () => {
         expect(f.componentInstance.ngOnInitCalled).toBe(false);
         f.detectChanges();
         expect(f.componentInstance.ngOnInitCalled).toBe(true);
+      });
+  }));
+
+  it('should assign an Observable to the designated property', inject([TestComponentBuilder], (tcb:TestComponentBuilder) => {
+    tcb.createAsync(MyComponent)
+      .then(f => {
+        f.detectChanges();
+        expect(f.componentInstance.foo instanceof Observable).toBe(true);
       });
   }));
 });
