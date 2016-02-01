@@ -3,7 +3,7 @@ import {bootstrap} from 'angular2/platform/browser';
 import {FIREBASE_URL, FirebaseList, FirebaseObservable} from 'angularfire2';
 // var Firebase = require('firebase');
 import Firebase from 'firebase';
-const rootFirebase = 'https://answers-mobile.firebaseio.com/';
+const rootFirebase = 'ws://test.firebaseio.com:5000';
 
 var ref = new Firebase(rootFirebase);
 ref.child('questions').set([{
