@@ -2,13 +2,22 @@ import {Observable} from 'rxjs/Observable';
 import {ScalarObservable} from 'rxjs/observable/ScalarObservable';
 import {Operator} from 'rxjs/Operator';
 import {Observer} from 'rxjs/Observer';
+import {merge} from 'rxjs/operator/merge-static';
+import {map} from 'rxjs/operator/map';
 
 export interface Query {
   orderByKey?: boolean | Observable<boolean>;
 }
 
-export interface ObservableQueryTuple {
-  key: string;
+export enum OrderByOptions {
+  Child,
+  Key,
+  Order,
+  Priority
+}
+
+export interface OrderBySelection {
+  key: OrderByOptions;
   value: any;
 }
 
@@ -22,14 +31,29 @@ export function observeQuery (query: Query): Observable<Query> {
   }
 
   return Observable.create((observer: Observer<Query>) => {
-    var serializedQuery:Query = {};
-    if (query.orderByKey instanceof Observable) {
-      (<Observable<boolean>>query.orderByKey).subscribe(v => {
-        serializedQuery.orderByKey = v;
-        observer.next(serializedQuery);
-      });
-    }
+    var serializedOrder:Query = {};
+    getOrderObservables(query).subscribe((v:OrderBySelection) => {
+      switch (v.key) {
+        case OrderByOptions.Key:
+          if (isPresent(v.value)) {
+            serializedOrder = {orderByKey: v.value};
+          } else {
+            serializedOrder = {};
+          }
+          break;
+      }
+      observer.next(serializedOrder);
+    });
   });
+}
+
+function getOrderObservables(query:Query):Observable<OrderBySelection> {
+  return merge(map.call(<Observable<boolean>>query.orderByKey, (v: boolean): OrderBySelection => {
+    return {
+      value: v,
+      key: OrderByOptions.Key
+    };
+  }));
 }
 
 function hasObservableProperties(query: Query): boolean {
