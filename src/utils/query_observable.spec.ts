@@ -3,9 +3,9 @@ import {Observable} from 'rxjs/Observable';
 import {Observer} from 'rxjs/Observer';
 import {Subject} from 'rxjs/Subject';
 
-import {observeQuery} from './query_observable';
+import {getOrderObservables, observeQuery} from './query_observable';
 
-describe('QueryObservable', () => {
+describe('observeQuery', () => {
   it('should return an observable', () => {
     expect(observeQuery({})).toBeAnInstanceOf(Observable);
   });
@@ -88,5 +88,14 @@ describe('QueryObservable', () => {
     nextSpy.calls.reset();
     query.orderByChild.next('foo');
     expect(nextSpy).toHaveBeenCalledWith({orderByChild: 'foo'});
+  });
+});
+
+
+describe('getOrderObservables', () => {
+  it('should be subscribable event if no observables found for orderby', () => {
+    expect(() => {
+      getOrderObservables({}).subscribe();
+    }).not.toThrow();
   });
 });

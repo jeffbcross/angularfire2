@@ -6,6 +6,7 @@ import {merge} from 'rxjs/operator/merge-static';
 import {map} from 'rxjs/operator/map';
 
 export interface Query {
+  [key:string]: any;
   orderByKey?: boolean | Observable<boolean>;
   orderByPriority?: boolean | Observable<boolean>;
   orderByChild?: string | Observable<string>;
@@ -61,29 +62,16 @@ export function observeQuery (query: Query): Observable<Query> {
   });
 }
 
-function getOrderObservables(query: Query): Observable<OrderBySelection> {
-  return merge(
-    mapToOrderBySelection(
-      <Observable<boolean>>query.orderByKey,
-      OrderByOptions.Key),
-
-    mapToOrderBySelection(
-      <Observable<boolean>>query.orderByPriority,
-      OrderByOptions.Priority),
-
-    mapToOrderBySelection(
-      <Observable<boolean>>query.orderByValue,
-      OrderByOptions.Value),
-
-    mapToOrderBySelection(
-      <Observable<string>>query.orderByChild,
-      OrderByOptions.Child)
-  );
+export function getOrderObservables(query: Query): Observable<OrderBySelection> {
+  return merge.apply(null, ['orderByChild', 'orderByKey', 'orderByValue', 'orderByPriority']
+    .map((key:string, option:OrderByOptions) => ({ key, option }))
+    .filter(({key, option}:{key: string, option: OrderByOptions}) => {
+      return query[key] instanceof Observable;
+    })
+    .map(({key, option}) => mapToOrderBySelection(<any>query[key], option)));
 }
 
 function mapToOrderBySelection (obs:Observable<boolean|string>, key:OrderByOptions): Observable<OrderBySelection> {
-  // TODO: something better than returning a no-op Observable
-  if (!(obs instanceof Observable)) return new Observable(() => {});
   return map
     .call(obs, (value: boolean):OrderBySelection => ({ value, key}));
 }
