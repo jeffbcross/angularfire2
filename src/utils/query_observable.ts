@@ -7,6 +7,11 @@ export interface Query {
   orderByKey?: boolean | Observable<boolean>;
 }
 
+export interface ObservableQueryTuple {
+  key: string;
+  value: any;
+}
+
 export function observeQuery (query: Query): Observable<Query> {
   if (!isPresent(query)) {
     return new ScalarObservable(null);
@@ -15,7 +20,15 @@ export function observeQuery (query: Query): Observable<Query> {
   if (!hasObservableProperties(query)) {
     return new ScalarObservable(query);
   }
+
   return Observable.create((observer: Observer<Query>) => {
+    var serializedQuery:Query = {};
+    if (query.orderByKey instanceof Observable) {
+      (<Observable<boolean>>query.orderByKey).subscribe(v => {
+        serializedQuery.orderByKey = v;
+        observer.next(serializedQuery);
+      });
+    }
   });
 }
 
