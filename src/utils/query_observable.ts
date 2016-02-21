@@ -8,18 +8,20 @@ import {map} from 'rxjs/operator/map';
 export interface Query {
   orderByKey?: boolean | Observable<boolean>;
   orderByPriority?: boolean | Observable<boolean>;
+  orderByChild?: string | Observable<string>;
+  orderByValue?: boolean | Observable<boolean>;
 }
 
 export enum OrderByOptions {
   Child,
   Key,
-  Order,
+  Value,
   Priority
 }
 
 export interface OrderBySelection {
   key: OrderByOptions;
-  value: any;
+  value: boolean | string;
 }
 
 export function observeQuery (query: Query): Observable<Query> {
@@ -39,14 +41,21 @@ export function observeQuery (query: Query): Observable<Query> {
       } else {
         switch (v.key) {
           case OrderByOptions.Key:
-            serializedOrder = {orderByKey: v.value};
+            serializedOrder = {orderByKey: <boolean>v.value};
             break;
           case OrderByOptions.Priority:
-            serializedOrder = {orderByPriority: v.value};
+            serializedOrder = {orderByPriority: <boolean>v.value};
+            break;
+          case OrderByOptions.Value:
+            serializedOrder = {orderByValue: <boolean>v.value};
+            break;
+          case OrderByOptions.Child:
+            serializedOrder = {orderByChild: <string>v.value};
             break;
         }
       }
 
+      // TODO: this should combine with other parts of the query
       observer.next(serializedOrder);
     });
   });
@@ -60,11 +69,19 @@ function getOrderObservables(query: Query): Observable<OrderBySelection> {
 
     mapToOrderBySelection(
       <Observable<boolean>>query.orderByPriority,
-      OrderByOptions.Priority)
+      OrderByOptions.Priority),
+
+    mapToOrderBySelection(
+      <Observable<boolean>>query.orderByValue,
+      OrderByOptions.Value),
+
+    mapToOrderBySelection(
+      <Observable<string>>query.orderByChild,
+      OrderByOptions.Child)
   );
 }
 
-function mapToOrderBySelection (obs:Observable<boolean>, key:OrderByOptions): Observable<OrderBySelection> {
+function mapToOrderBySelection (obs:Observable<boolean|string>, key:OrderByOptions): Observable<OrderBySelection> {
   // TODO: something better than returning a no-op Observable
   if (!(obs instanceof Observable)) return new Observable(() => {});
   return map

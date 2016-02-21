@@ -71,7 +71,9 @@ describe('QueryObservable', () => {
     var completeSpy = jasmine.createSpy('complete');
     var query = {
       orderByKey: new Subject(),
-      orderByPriority: new Subject()
+      orderByPriority: new Subject(),
+      orderByValue: new Subject(),
+      orderByChild: new Subject()
     };
     var obs = observeQuery(query);
     obs.subscribe(nextSpy);
@@ -80,5 +82,11 @@ describe('QueryObservable', () => {
     nextSpy.calls.reset();
     query.orderByPriority.next(true);
     expect(nextSpy).toHaveBeenCalledWith({orderByPriority: true});
+    nextSpy.calls.reset();
+    query.orderByValue.next(true);
+    expect(nextSpy).toHaveBeenCalledWith({orderByValue: true});
+    nextSpy.calls.reset();
+    query.orderByChild.next('foo');
+    expect(nextSpy).toHaveBeenCalledWith({orderByChild: 'foo'});
   });
 });
