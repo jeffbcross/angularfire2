@@ -7,6 +7,7 @@ import {map} from 'rxjs/operator/map';
 
 export interface Query {
   orderByKey?: boolean | Observable<boolean>;
+  orderByPriority?: boolean | Observable<boolean>;
 }
 
 export enum OrderByOptions {
@@ -40,6 +41,9 @@ export function observeQuery (query: Query): Observable<Query> {
           case OrderByOptions.Key:
             serializedOrder = {orderByKey: v.value};
             break;
+          case OrderByOptions.Priority:
+            serializedOrder = {orderByPriority: v.value};
+            break;
         }
       }
 
@@ -48,13 +52,23 @@ export function observeQuery (query: Query): Observable<Query> {
   });
 }
 
-function getOrderObservables(query:Query):Observable<OrderBySelection> {
-  return merge(map.call(<Observable<boolean>>query.orderByKey, (v: boolean): OrderBySelection => {
-    return {
-      value: v,
-      key: OrderByOptions.Key
-    };
-  }));
+function getOrderObservables(query: Query): Observable<OrderBySelection> {
+  return merge(
+    mapToOrderBySelection(
+      <Observable<boolean>>query.orderByKey,
+      OrderByOptions.Key),
+
+    mapToOrderBySelection(
+      <Observable<boolean>>query.orderByPriority,
+      OrderByOptions.Priority)
+  );
+}
+
+function mapToOrderBySelection (obs:Observable<boolean>, key:OrderByOptions): Observable<OrderBySelection> {
+  // TODO: something better than returning a no-op Observable
+  if (!(obs instanceof Observable)) return new Observable(() => {});
+  return map
+    .call(obs, (value: boolean):OrderBySelection => ({ value, key}));
 }
 
 function hasObservableProperties(query: Query): boolean {

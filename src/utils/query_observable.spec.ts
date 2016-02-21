@@ -49,6 +49,7 @@ describe('QueryObservable', () => {
     expect(nextSpy).toHaveBeenCalledWith({orderByKey:false});
   });
 
+
   it('should omit a key from the query if its observable emits null', () => {
     var nextSpy = jasmine.createSpy('next');
     var completeSpy = jasmine.createSpy('complete');
@@ -62,5 +63,22 @@ describe('QueryObservable', () => {
     nextSpy.calls.reset();
     query.orderByKey.next(null);
     expect(nextSpy).toHaveBeenCalledWith({});
+  });
+
+
+  it('should omit only the orderBy type of the last emitted orderBy observable', () => {
+    var nextSpy = jasmine.createSpy('next');
+    var completeSpy = jasmine.createSpy('complete');
+    var query = {
+      orderByKey: new Subject(),
+      orderByPriority: new Subject()
+    };
+    var obs = observeQuery(query);
+    obs.subscribe(nextSpy);
+    query.orderByKey.next(true);
+    expect(nextSpy).toHaveBeenCalledWith({orderByKey:true});
+    nextSpy.calls.reset();
+    query.orderByPriority.next(true);
+    expect(nextSpy).toHaveBeenCalledWith({orderByPriority: true});
   });
 });
