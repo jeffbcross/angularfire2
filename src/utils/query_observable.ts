@@ -33,15 +33,16 @@ export function observeQuery (query: Query): Observable<Query> {
   return Observable.create((observer: Observer<Query>) => {
     var serializedOrder:Query = {};
     getOrderObservables(query).subscribe((v:OrderBySelection) => {
-      switch (v.key) {
-        case OrderByOptions.Key:
-          if (isPresent(v.value)) {
+      if (!isPresent(v.value)) {
+        serializedOrder = {};
+      } else {
+        switch (v.key) {
+          case OrderByOptions.Key:
             serializedOrder = {orderByKey: v.value};
-          } else {
-            serializedOrder = {};
-          }
-          break;
+            break;
+        }
       }
+
       observer.next(serializedOrder);
     });
   });
