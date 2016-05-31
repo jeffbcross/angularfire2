@@ -1,6 +1,6 @@
 import {APP_INITIALIZER, Inject, Injectable, OpaqueToken, provide, Provider} from '@angular/core';
 import {FirebaseAuth, firebaseAuthConfig} from './providers/auth';
-import * as Firebase from 'firebase';
+import * as firebase from 'firebase';
 import {FirebaseListObservable} from './utils/firebase_list_observable';
 import {FirebaseObjectObservable} from './utils/firebase_object_observable';
 import {FirebaseListFactory, FirebaseListFactoryOpts} from './utils/firebase_list_factory';
@@ -8,7 +8,7 @@ import {
   FirebaseObjectFactoryOpts,
   FirebaseObjectFactory
 } from './utils/firebase_object_factory';
-import {FirebaseUrl, FirebaseRef} from './tokens';
+import {FirebaseConfig, FirebaseRef} from './tokens';
 import {
   AuthBackend,
   AuthMethods,
@@ -23,7 +23,7 @@ export class AngularFire {
   list: (url:string, opts?:FirebaseListFactoryOpts) => FirebaseListObservable<any[]>;
   object: (url: string, opts?:FirebaseObjectFactoryOpts) => FirebaseObjectObservable<any>;
   constructor(
-    @Inject(FirebaseUrl) private fbUrl:string,
+    @Inject(FirebaseConfig) private fbUrl:string,
     public auth:FirebaseAuth,
     public database: FirebaseDatabase) {}
 
@@ -39,8 +39,15 @@ function getAbsUrl (root:string, url:string) {
 
 export const COMMON_PROVIDERS: any[] = [
   provide(FirebaseRef, {
-    useFactory: (url:string) => new Firebase(url),
-    deps: [FirebaseUrl]}),
+    useFactory: (config: FirebaseAppConfig) => {
+      return firebase.initializeApp({
+        apiKey: config.apiKey,
+        authDomain: config.authDomain,
+        databaseURL: config.databaseURL,
+        storageBucket: config.storageBucket
+      });
+    },
+    deps: [FirebaseConfig]}),
   FirebaseAuth,
   AngularFire,
   FirebaseDatabase
@@ -58,9 +65,9 @@ export const FIREBASE_PROVIDERS:any[] = [
  * Used to define the default Firebase root location to be
  * used throughout an application.
  */
-export const defaultFirebase = (url: string): Provider => {
-  return provide(FirebaseUrl, {
-    useValue: url
+export const defaultFirebase = (config: FirebaseAppConfig): Provider => {
+  return provide(FirebaseConfig, {
+    useValue: config
   });
 };
 
@@ -77,10 +84,9 @@ export {
   AuthProviders
 }
 
-export {FirebaseUrl, FirebaseRef, FirebaseAuthConfig} from './tokens';
+export {FirebaseConfig, FirebaseRef, FirebaseAuthConfig} from './tokens';
 
 // Helps Angular-CLI automatically add providers
 export default {
   providers: FIREBASE_PROVIDERS
 }
-

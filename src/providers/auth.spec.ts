@@ -6,7 +6,7 @@ import {Observable} from 'rxjs/Observable'
 import {
   FIREBASE_PROVIDERS,
   FirebaseRef,
-  FirebaseUrl,
+  FirebaseConfig,
   FirebaseAuth,
   AuthMethods,
   FirebaseAuthState,
@@ -57,7 +57,7 @@ describe('FirebaseAuth', () => {
     authData = null;
     authCb = null;
     injector = ReflectiveInjector.resolveAndCreate([
-      provide(FirebaseUrl, {
+      provide(FirebaseConfig, {
         useValue: 'https://angularfire2-auth.firebaseio-demo.com/'
       }),
       FIREBASE_PROVIDERS
@@ -93,7 +93,7 @@ describe('FirebaseAuth', () => {
       updateAuthState(authState);
       let nextSpy = jasmine.createSpy('nextSpy');
       let auth = injector.get(FirebaseAuth);
-      
+
       auth.subscribe(nextSpy);
       expect(nextSpy).toHaveBeenCalledWith(AngularFireAuthState);
     });

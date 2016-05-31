@@ -1,5 +1,5 @@
 import {Inject, Injectable} from '@angular/core';
-import {FirebaseUrl} from '../tokens';
+import {FirebaseConfig} from '../tokens';
 import {FirebaseListObservable} from '../utils/firebase_list_observable';
 import {FirebaseObjectObservable} from '../utils/firebase_object_observable';
 import {FirebaseListFactory, FirebaseListFactoryOpts} from '../utils/firebase_list_factory';
@@ -8,7 +8,7 @@ import * as utils from '../utils/utils'
 
 @Injectable()
 export class FirebaseDatabase {
-  constructor(@Inject(FirebaseUrl) private fbUrl:string) {}
+  constructor(@Inject(FirebaseConfig) private fbUrl:string) {}
   list (urlOrRef:string | Firebase, opts?:FirebaseListFactoryOpts):FirebaseListObservable<any[]> {
     return utils.checkForUrlOrFirebaseRef(urlOrRef, {
       isUrl: () => FirebaseListFactory(getAbsUrl(this.fbUrl, <string>urlOrRef), opts),
