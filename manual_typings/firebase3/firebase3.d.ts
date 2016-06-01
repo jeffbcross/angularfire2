@@ -87,8 +87,11 @@ declare interface FirebaseAuthProvider {
 	providerId: string;
 }
 
-declare interface FirebaseQuery {
-
+declare interface FirebaseDatabaseQuery extends FirebaseRef {
+	ref: FirebaseRef;
+	endAt(value: number | string | boolean, key?: string): FirebaseDatabaseQuery;
+	orderByChild(path: string): FirebaseDatabaseQuery;
+	orderByKey()
 }
 
 declare var firebaseModule: FirebaseModule;

@@ -46,7 +46,7 @@ export function unwrapMapFn (snapshot:FirebaseDataSnapshot): AFUnwrappedDataSnap
   return unwrapped;
 }
 
-export function checkForUrlOrFirebaseRef(urlOrRef: string | Firebase | FirebaseQuery, cases: CheckUrlRef): any {
+export function checkForUrlOrFirebaseRef(urlOrRef: string | Firebase | FirebaseDatabaseQuery, cases: CheckUrlRef): any {
   if (isString(urlOrRef)) {
     return cases.isUrl();
   }
@@ -56,5 +56,5 @@ export function checkForUrlOrFirebaseRef(urlOrRef: string | Firebase | FirebaseQ
   if (isFirebaseQuery(urlOrRef)) {
     return cases.isQuery();
   }
-  throw new Error('Provide a url or a Firebase database reference');  
+  throw new Error('Provide a url or a Firebase database reference');
 }

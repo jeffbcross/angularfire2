@@ -14,7 +14,7 @@ export interface FirebaseOperationCases {
 }
 
 export class FirebaseListObservable<T> extends Observable<T> {
-  constructor(public _ref: Firebase | FirebaseQuery, subscribe?: <R>(subscriber: Subscriber<R>) => Subscription | Function | void) {
+  constructor(public _ref: Firebase | FirebaseDatabaseQuery, subscribe?: <R>(subscriber: Subscriber<R>) => Subscription | Function | void) {
     super(subscribe);
   }
   lift<T, R>(operator: Operator<T, R>): Observable<R> {
@@ -23,7 +23,7 @@ export class FirebaseListObservable<T> extends Observable<T> {
     observable.operator = operator;
     observable._ref = this._ref;
     return observable;
-  } 
+  }
 
   push(val:any):FirebaseWithPromise<void> {
     if(!this._ref) {
@@ -31,7 +31,7 @@ export class FirebaseListObservable<T> extends Observable<T> {
     }
     return this._ref.ref().push(val);
   }
-  
+
   update(item: FirebaseOperation, value: Object): Promise<void> {
     return this._checkOperationCases(item, {
       stringCase: () => this._ref.ref().child(<string>item).update(value),
@@ -44,7 +44,7 @@ export class FirebaseListObservable<T> extends Observable<T> {
   remove(item:FirebaseOperation = null): Promise<void> {
     // TODO: remove override when typings are updated to include
     // remove() returning a promise.
-    
+
     // if no item parameter is provided, remove the whole list
     if (!item) {
       return this._ref.ref().remove();
@@ -56,7 +56,7 @@ export class FirebaseListObservable<T> extends Observable<T> {
       unwrappedSnapshotCase: () => this._ref.ref().child((<AFUnwrappedDataSnapshot>item).$key).remove()
     });
   }
-  
+
   _checkOperationCases(item: FirebaseOperation, cases: FirebaseOperationCases) : Promise<void> {
     if (utils.isString(item)) {
       return cases.stringCase();
@@ -72,7 +72,7 @@ export class FirebaseListObservable<T> extends Observable<T> {
     }
     throw new Error(`FirebaseListObservable.remove requires a key, snapshot, reference, or unwrapped snapshot. Got: ${typeof item}`);
   }
-  
+
 }
 
 export interface AFUnwrappedDataSnapshot {

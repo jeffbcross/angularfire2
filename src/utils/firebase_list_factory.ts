@@ -6,26 +6,26 @@ import {Query, observeQuery} from './query_observable';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/map';
 
-export function FirebaseListFactory (absoluteUrlOrDbRef:string | Firebase | FirebaseQuery, {preserveSnapshot, query = {}}:FirebaseListFactoryOpts = {}): FirebaseListObservable<any> {
-  let ref: Firebase | FirebaseQuery;
-  
+export function FirebaseListFactory (absoluteUrlOrDbRef:string | Firebase | FirebaseDatabaseQuery, {preserveSnapshot, query = {}}:FirebaseListFactoryOpts = {}): FirebaseListObservable<any> {
+  let ref: Firebase | FirebaseDatabaseQuery;
+
   utils.checkForUrlOrFirebaseRef(absoluteUrlOrDbRef, {
     isUrl: () => ref = new Firebase(<string>absoluteUrlOrDbRef),
     isRef: () => ref = <Firebase>absoluteUrlOrDbRef,
-    isQuery: () => ref = <FirebaseQuery>absoluteUrlOrDbRef,
+    isQuery: () => ref = <FirebaseDatabaseQuery>absoluteUrlOrDbRef,
   });
-  
+
   // if it's just a reference or string, create a regular list observable
-  if ((utils.isFirebaseRef(absoluteUrlOrDbRef) || 
-       utils.isString(absoluteUrlOrDbRef)) && 
+  if ((utils.isFirebaseRef(absoluteUrlOrDbRef) ||
+       utils.isString(absoluteUrlOrDbRef)) &&
        utils.isEmptyObject(query)) {
     return firebaseListObservable(ref, { preserveSnapshot });
   }
-  
+
   const queryObs = observeQuery(query);
   const listObs = <FirebaseListObservable<{}>>queryObs
     .map(query => {
-      let queried: FirebaseQuery = ref;
+      let queried: FirebaseDatabaseQuery = ref;
       // Only apply the populated keys
       // apply ordering and available querying options
       // eg: ref.orderByChild('height').startAt(3)
@@ -39,49 +39,49 @@ export function FirebaseListFactory (absoluteUrlOrDbRef:string | Firebase | Fire
       } else if (query.orderByValue) {
         queried = queried.orderByValue();
       }
-      
+
       // check equalTo
       if (utils.isPresent(query.equalTo)) {
           queried = queried.equalTo(query.equalTo);
-          
+
         if (utils.isPresent(query.startAt) || query.endAt) {
           throw new Error('Query Error: Cannot use startAt or endAt with equalTo.');
-        }          
-        
+        }
+
         // apply limitTos
         if (utils.isPresent(query.limitToFirst)) {
           queried = queried.limitToFirst(query.limitToFirst);
         }
-        
+
         if (utils.isPresent(query.limitToLast)) {
           queried = queried.limitToLast(query.limitToLast);
         }
-        
+
         return queried;
       }
-      
+
       // check startAt
       if (utils.isPresent(query.startAt)) {
           queried = queried.startAt(query.startAt);
       }
-      
+
       if (utils.isPresent(query.endAt)) {
           queried = queried.endAt(query.endAt);
       }
-      
+
       if (utils.isPresent(query.limitToFirst) && query.limitToLast) {
         throw new Error('Query Error: Cannot use limitToFirst with limitToLast.');
       }
-      
+
       // apply limitTos
       if (utils.isPresent(query.limitToFirst)) {
           queried = queried.limitToFirst(query.limitToFirst);
       }
-      
+
       if (utils.isPresent(query.limitToLast)) {
           queried = queried.limitToLast(query.limitToLast);
       }
-      
+
       return queried;
     })
     .mergeMap((queryRef: Firebase, ix: number) => {
@@ -90,8 +90,8 @@ export function FirebaseListFactory (absoluteUrlOrDbRef:string | Firebase | Fire
     return listObs;
 }
 
-function firebaseListObservable(ref: Firebase | FirebaseQuery, {preserveSnapshot}: FirebaseListFactoryOpts = {}): FirebaseListObservable<any> {
-  
+function firebaseListObservable(ref: Firebase | FirebaseDatabaseQuery, {preserveSnapshot}: FirebaseListFactoryOpts = {}): FirebaseListObservable<any> {
+
   const listObs = new FirebaseListObservable(ref, (obs: Observer<any[]>) => {
     let arr: any[] = [];
     let hasInitialLoad = false;
