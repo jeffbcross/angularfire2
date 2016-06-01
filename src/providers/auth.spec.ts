@@ -16,7 +16,6 @@ import {
 import {AuthBackend} from './auth_backend';
 import {FirebaseSdkAuthBackend} from './firebase_sdk_auth_backend';
 import * as Firebase from 'firebase';
-import * as mockPromises from 'mock-promises';
 
 describe('FirebaseAuth', () => {
   let injector: ReflectiveInjector = null;
