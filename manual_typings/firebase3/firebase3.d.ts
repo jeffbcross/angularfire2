@@ -1,11 +1,11 @@
 /// <reference path="../../node_modules/rxjs/Observer.d.ts" />
 
 // TODO(): generate these typings from Firebase source, and publish to npm
-declare class FirebaseApplication {
+declare interface FirebaseApplication {
 	database(): FirebaseDatabase
 }
 
-declare class FirebaseModule {
+declare interface FirebaseModule {
 	initializeApp(config: FirebaseAppConfig, name?: string): FirebaseApplication;
 	auth(): FirebaseAuth;
 }
@@ -17,18 +17,18 @@ declare interface FirebaseAppConfig {
   storageBucket?: string;
 }
 
-declare class FirebaseDatabase {
+declare interface FirebaseDatabase {
 	app: FirebaseApplication;
 	ref(path?: string): Firebase;
 }
 
-declare class FirebaseRef {
+declare interface FirebaseRef {
 	child(path: string): Firebase;
 	remove(onComplete?: Function): Promise<void>;
 }
 
 // TODO: remove this once codebase has been updated to refer to FirebaseRef
-declare class Firebase extends FirebaseRef {
+declare interface Firebase extends FirebaseRef {
 }
 
 declare interface FirebaseUser {
