@@ -87,6 +87,10 @@ declare interface FirebaseAuthProvider {
 	providerId: string;
 }
 
+declare interface FirebaseQuery {
+
+}
+
 declare var firebaseModule: FirebaseModule;
 
 declare module 'firebase' {
