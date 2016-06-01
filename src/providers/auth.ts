@@ -1,20 +1,17 @@
 import {Provider, Inject, provide, Injectable, Optional} from '@angular/core';
+import { Observable } from 'rxjs/Observable';
+import { Observer } from 'rxjs/Observer';
 import {ReplaySubject} from 'rxjs/ReplaySubject';
-import {FirebaseRef, FirebaseAuthConfig} from '../tokens';
+import {FirebaseApp, FirebaseAuthConfig} from '../tokens';
 import {isPresent} from '../utils/utils';
 import * as utils from '../utils/utils';
 import {
   AuthBackend,
   AuthProviders,
   AuthMethods,
-  OAuthCredentials,
-  OAuth1Credentials,
-  OAuth2Credentials,
-  AuthCredentials,
-  FirebaseAuthState,
+  EmailPasswordCredentials,
   AuthConfiguration,
-  FirebaseAuthDataAllProviders,
-  authDataToAuthState
+  FirebaseAuthDataAllProviders
 } from './auth_backend';
 
 const kBufferSize = 1;
@@ -26,20 +23,21 @@ export const firebaseAuthConfig = (config: AuthConfiguration): Provider => {
 };
 
 @Injectable()
-export class FirebaseAuth extends ReplaySubject<FirebaseAuthState> {
+export class FirebaseAuth extends ReplaySubject<FirebaseUser> {
   constructor(private _authBackend: AuthBackend,
     @Optional() @Inject(FirebaseAuthConfig) private _config?: AuthConfiguration) {
     super(kBufferSize);
 
-    this._authBackend.onAuth((authData) => this._emitAuthData(authData));
+    this._authBackend.onAuth().subscribe((authData: FirebaseUser) => this._emitAuthData(authData));
   }
 
-  public login(config?: AuthConfiguration): Promise<FirebaseAuthState>;
-  public login(credentials?: FirebaseCredentials): Promise<FirebaseAuthState>;
-  public login(credentials: AuthCredentials, config?: AuthConfiguration): Promise<FirebaseAuthState>;
-  public login(obj1?: any, obj2?: AuthConfiguration): Promise<FirebaseAuthState> {
+  public login(config?: AuthConfiguration): Promise<FirebaseUser | void>;
+  // If logging in with email and password
+  public login(credentials?: EmailPasswordCredentials | FirebaseAuthCredential | string): Promise<FirebaseUser>;
+  public login(credentials: EmailPasswordCredentials | FirebaseAuthCredential | string, config?: AuthConfiguration): Promise<FirebaseUser>;
+  public login(obj1?: any, obj2?: AuthConfiguration): Promise<FirebaseUser | void> {
     let config: AuthConfiguration = null;
-    let credentials: AuthCredentials = null;
+    let credentials: EmailPasswordCredentials | FirebaseAuthCredential | string = null;
     if (arguments.length > 2) {
       return this._reject('Login only accepts a maximum of two arguments.');
     } else if (arguments.length == 2) {
@@ -74,33 +72,34 @@ export class FirebaseAuth extends ReplaySubject<FirebaseAuthState> {
 
     switch (config.method) {
       case AuthMethods.Popup:
-        return this._authBackend.authWithOAuthPopup(config.provider, this._scrubConfig(config));
+        return this._authBackend.authWithOAuthPopup(config.provider, this._scrubConfig(config))
+          .then((userCredential: FirebaseUserCredential) => this._authBackend.authWithOAuthToken(userCredential.credential));
       case AuthMethods.Redirect:
         return this._authBackend.authWithOAuthRedirect(config.provider, this._scrubConfig(config));
       case AuthMethods.Anonymous:
         return this._authBackend.authAnonymously(this._scrubConfig(config));
       case AuthMethods.Password:
-        return this._authBackend.authWithPassword(<FirebaseCredentials>credentials, this._scrubConfig(config, false));
+        return this._authBackend.authWithPassword(<EmailPasswordCredentials>credentials, this._scrubConfig(config, false));
       case AuthMethods.OAuthToken:
-        return this._authBackend.authWithOAuthToken(config.provider, <OAuthCredentials>credentials,
+        return this._authBackend.authWithOAuthToken(<FirebaseAuthCredential>credentials,
           this._scrubConfig(config));
       case AuthMethods.CustomToken:
-        return this._authBackend.authWithCustomToken((<OAuth2Credentials>credentials).token,
+        return this._authBackend.authWithCustomToken(<string>credentials,
           this._scrubConfig(config, false));
     }
   }
 
   public logout(): void {
-    if (this._authBackend.getAuth() !== null) {
-      this._authBackend.unauth();
-    }
+    this._authBackend.unauth();
   }
 
-  public getAuth(): FirebaseAuthData {
-    return this._authBackend.getAuth();
+  //TODO: Make breaking change note
+  public onAuth(): Observable<FirebaseUser> {
+    // return this._authBackend.
+    return this._authBackend.onAuth();
   }
 
-  public createUser(credentials: FirebaseCredentials): Promise<FirebaseAuthData> {
+  public createUser(credentials: EmailPasswordCredentials): Promise<FirebaseUser> {
     return this._authBackend.createUser(credentials);
   }
 
@@ -115,7 +114,7 @@ export class FirebaseAuth extends ReplaySubject<FirebaseAuthState> {
     return Object.assign({}, this._config, config);
   }
 
-  private _reject(msg: string): Promise<FirebaseAuthState> {
+  private _reject(msg: string): Promise<FirebaseUser> {
     return new Promise((res, rej) => {
       return rej(msg);
     });
@@ -131,11 +130,12 @@ export class FirebaseAuth extends ReplaySubject<FirebaseAuthState> {
   }
 
 
-  private _emitAuthData(authData: FirebaseAuthDataAllProviders): void {
+  private _emitAuthData(authData: FirebaseUser): void {
     if (authData == null) {
       this.next(null);
     } else {
-      this.next(authDataToAuthState(authData));
+      this.next(authData);
     }
   }
 }
+
