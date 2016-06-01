@@ -18,7 +18,7 @@ import {
   FIREBASE_PROVIDERS,
   FirebaseAuth,
   FirebaseConfig,
-  FirebaseRef,
+  FirebaseApp,
   defaultFirebase,
   FirebaseDatabase
 } from './angularfire2';
@@ -81,7 +81,7 @@ describe('angularfire', () => {
         }),
         FIREBASE_PROVIDERS
       ]);
-      expect(typeof injector.get(FirebaseRef).on).toBe('function');
+      expect(typeof injector.get(FirebaseApp).on).toBe('function');
     })
   });
 
@@ -94,7 +94,7 @@ describe('angularfire', () => {
 
     it('should inject a FIR reference', () => {
       const injector = ReflectiveInjector.resolveAndCreate([defaultFirebase(firebaseConfig), FIREBASE_PROVIDERS]);
-      expect(injector.get(FirebaseRef).toString()).toBe(firebaseConfig);
+      expect(injector.get(FirebaseApp).toString()).toBe(firebaseConfig);
     });
   });
 

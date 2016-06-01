@@ -5,7 +5,7 @@ import {ReflectiveInjector, provide, Provider} from '@angular/core';
 import {Observable} from 'rxjs/Observable'
 import {
   FIREBASE_PROVIDERS,
-  FirebaseRef,
+  FirebaseApp,
   FirebaseConfig,
   FirebaseAuth,
   AuthMethods,
@@ -73,7 +73,7 @@ describe('FirebaseAuth', () => {
   describe('AuthState', () => {
 
     beforeEach(() => {
-      ref = injector.get(FirebaseRef);
+      ref = injector.get(FirebaseApp);
       spyOn(ref, 'onAuth').and.callFake((fn: (a: any) => void) => {
         authCb = fn;
         if (authCb !== null) {

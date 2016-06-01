@@ -8,12 +8,11 @@ import {
   FirebaseObjectFactoryOpts,
   FirebaseObjectFactory
 } from './utils/firebase_object_factory';
-import {FirebaseConfig, FirebaseRef} from './tokens';
+import {FirebaseConfig, FirebaseApp} from './tokens';
 import {
   AuthBackend,
   AuthMethods,
-  AuthProviders,
-  FirebaseAuthState
+  AuthProviders
 } from './providers/auth_backend';
 import {FirebaseSdkAuthBackend} from './providers/firebase_sdk_auth_backend';
 import {FirebaseDatabase} from './database/database';
@@ -38,7 +37,7 @@ function getAbsUrl (root:string, url:string) {
 }
 
 export const COMMON_PROVIDERS: any[] = [
-  provide(FirebaseRef, {
+  provide(FirebaseApp, {
     useFactory: (config: FirebaseAppConfig) => {
       return firebase.initializeApp({
         apiKey: config.apiKey,
@@ -56,8 +55,8 @@ export const COMMON_PROVIDERS: any[] = [
 export const FIREBASE_PROVIDERS:any[] = [
   COMMON_PROVIDERS,
   provide(AuthBackend, {
-    useFactory: (ref: Firebase) => new FirebaseSdkAuthBackend(ref, false),
-    deps: [FirebaseRef]
+    useFactory: (ref: FirebaseRef) => new FirebaseSdkAuthBackend(ref, false),
+    deps: [FirebaseApp]
   })
 ];
 
@@ -79,12 +78,11 @@ export {
   FirebaseListFactory,
   FirebaseObjectFactory,
   firebaseAuthConfig,
-  FirebaseAuthState,
   AuthMethods,
   AuthProviders
 }
 
-export {FirebaseConfig, FirebaseRef, FirebaseAuthConfig} from './tokens';
+export { FirebaseConfig, FirebaseApp, FirebaseAuthConfig } from './tokens';
 
 // Helps Angular-CLI automatically add providers
 export default {
