@@ -28,8 +28,7 @@ import 'rxjs/add/operator/take';
 import 'rxjs/add/operator/do';
 import 'rxjs/add/operator/delay';
 
-// Only use this URL for angularfire2.spec.ts
-const firebaseConfig: FirebaseAppConfig = {
+export const firebaseConfig: FirebaseAppConfig = {
   apiKey: "AIzaSyBVSy3YpkVGiKXbbxeK0qBnu3-MNZ9UIjA",
   authDomain: "angularfire2-test.firebaseapp.com",
   databaseURL: "https://angularfire2-test.firebaseio.com",

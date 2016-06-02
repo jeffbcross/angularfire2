@@ -2,7 +2,8 @@
 
 // TODO(): generate these typings from Firebase source, and publish to npm
 declare interface FirebaseApplication {
-	database(): FirebaseDatabase
+	database(): FirebaseDatabase;
+	auth(): FirebaseAuth;
 	delete(): Promise<void>;
 }
 

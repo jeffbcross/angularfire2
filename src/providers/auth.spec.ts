@@ -1,28 +1,39 @@
 /// <reference path="../../manual_typings/manual_typings.d.ts" />
 
-import {expect, describe, it, iit, beforeEach} from '@angular/core/testing';
+import {
+  expect,
+  ddescribe,
+  describe,
+  it,
+  iit,
+  beforeEach
+} from '@angular/core/testing';
 import {ReflectiveInjector, provide, Provider} from '@angular/core';
 import {Observable} from 'rxjs/Observable'
+import { Observer } from 'rxjs/Observer';
 import {
+  defaultFirebase,
   FIREBASE_PROVIDERS,
   FirebaseApp,
   FirebaseConfig,
   FirebaseAuth,
   AuthMethods,
-  FirebaseAuthState,
   firebaseAuthConfig,
   AuthProviders
 } from '../angularfire2';
+import {
+  firebaseConfig
+} from '../angularfire2.spec';
 import {AuthBackend} from './auth_backend';
 import {FirebaseSdkAuthBackend} from './firebase_sdk_auth_backend';
 import * as Firebase from 'firebase';
 
 describe('FirebaseAuth', () => {
-  let injector: ReflectiveInjector = null;
-  let ref: Firebase = null;
-  let authData: any = null;
-  let authCb: any = null;
-  let backend: AuthBackend = null;
+  let injector: ReflectiveInjector;
+  let app: FirebaseApplication;
+  let authData: any;
+  let authCb: any;
+  let backend: AuthBackend;
 
   const providerMetadata = {
     accessToken: 'accessToken',
@@ -56,31 +67,35 @@ describe('FirebaseAuth', () => {
     authData = null;
     authCb = null;
     injector = ReflectiveInjector.resolveAndCreate([
-      provide(FirebaseConfig, {
-        useValue: 'https://angularfire2-auth.firebaseio-demo.com/'
-      }),
-      FIREBASE_PROVIDERS
+      FIREBASE_PROVIDERS,
+      defaultFirebase(firebaseConfig)
     ]);
+    app = injector.get(FirebaseApp);
+  });
 
+  afterEach(done => {
+    app.delete().then(done, done.fail);
   });
 
 
-  it('should be an observable', () => {
+  iit('should be an observable', () => {
     expect(injector.get(FirebaseAuth)).toBeAnInstanceOf(Observable);
   })
 
   describe('AuthState', () => {
 
     beforeEach(() => {
-      ref = injector.get(FirebaseApp);
-      spyOn(ref, 'onAuth').and.callFake((fn: (a: any) => void) => {
+      spyOn(app.auth(), 'onAuthStateChanged').and.callFake((fn: (a: any) => void) => {
         authCb = fn;
-        if (authCb !== null) {
+        if (typeof authCb === 'function') {
           authCb(authData);
+        } else if (typeof authCb === 'object') {
+          <Observer<FirebaseUser>>authCb.next(authData);
         }
       });
-      backend = new FirebaseSdkAuthBackend(ref);
+      backend = new FirebaseSdkAuthBackend(app);
     });
+
     function updateAuthState(_authData: any): void {
       authData = _authData;
       if (authCb !== null) {
@@ -88,13 +103,13 @@ describe('FirebaseAuth', () => {
       }
     }
 
-    it('should synchronously load firebase auth data', () => {
+    iit('should asynchronously load firebase auth data', (done) => {
       updateAuthState(authState);
-      let nextSpy = jasmine.createSpy('nextSpy');
       let auth = injector.get(FirebaseAuth);
 
-      auth.subscribe(nextSpy);
-      expect(nextSpy).toHaveBeenCalledWith(AngularFireAuthState);
+      auth
+        .take(1)
+        .subscribe(null, done.fail, done);
     });
 
     it('should be null if user is not authed', () => {
@@ -138,18 +153,18 @@ describe('FirebaseAuth', () => {
   function callback(callbackName: string, callIndex?: number): Function {
     callIndex = callIndex || 0; //assume the first call.
     var argIndex = getArgIndex(callbackName);
-    return (<any>ref)[callbackName].calls.argsFor(callIndex)[argIndex];
+    return (<any>app)[callbackName].calls.argsFor(callIndex)[argIndex];
   }
 
   describe('firebaseAuthConfig', () => {
     beforeEach(() => {
-      ref = jasmine.createSpyObj('ref',
+      app = jasmine.createSpyObj('ref',
         ['authWithCustomToken', 'authAnonymously', 'authWithPassword',
           'authWithOAuthPopup', 'authWithOAuthRedirect', 'authWithOAuthToken',
           'unauth', 'getAuth', 'onAuth', 'offAuth',
           'createUser', 'changePassword', 'changeEmail', 'removeUser', 'resetPassword'
         ]);
-      backend = new FirebaseSdkAuthBackend(ref);
+      backend = new FirebaseSdkAuthBackend(app);
     });
 
     it('should return a provider', () => {
@@ -162,7 +177,7 @@ describe('FirebaseAuth', () => {
       };
       let auth = new FirebaseAuth(backend, config);
       auth.login();
-      expect(ref.authAnonymously).toHaveBeenCalled();
+      expect(app.authAnonymously).toHaveBeenCalled();
     });
 
     it('should pass options on to login method', () => {
@@ -172,7 +187,7 @@ describe('FirebaseAuth', () => {
       };
       let auth = new FirebaseAuth(backend, config);
       auth.login();
-      expect(ref.authAnonymously).toHaveBeenCalledWith(jasmine.any(Function), { remember: 'default' });
+      expect(app.authAnonymously).toHaveBeenCalledWith(jasmine.any(Function), { remember: 'default' });
     });
 
     it('should be overridden by login\'s arguments', () => {
@@ -184,7 +199,7 @@ describe('FirebaseAuth', () => {
         method: AuthMethods.Popup,
         provider: AuthProviders.Google
       });
-      expect(ref.authWithOAuthPopup).toHaveBeenCalledWith('google', jasmine.any(Function), {});
+      expect(app.authWithOAuthPopup).toHaveBeenCalledWith('google', jasmine.any(Function), {});
     });
 
     it('should be merged with login\'s arguments', () => {
@@ -197,7 +212,7 @@ describe('FirebaseAuth', () => {
       auth.login({
         provider: AuthProviders.Github
       });
-      expect(ref.authWithOAuthPopup).toHaveBeenCalledWith('github', jasmine.any(Function), {
+      expect(app.authWithOAuthPopup).toHaveBeenCalledWith('github', jasmine.any(Function), {
         scope: ['email']
       });
     });
@@ -208,19 +223,19 @@ describe('FirebaseAuth', () => {
     let credentials = { email: 'myname', password: 'password' };
 
     beforeEach(() => {
-      ref = jasmine.createSpyObj('ref',
+      app = jasmine.createSpyObj('ref',
         ['authWithCustomToken', 'authAnonymously', 'authWithPassword',
           'authWithOAuthPopup', 'authWithOAuthRedirect', 'authWithOAuthToken',
           'unauth', 'getAuth', 'onAuth', 'offAuth',
           'createUser', 'changePassword', 'changeEmail', 'removeUser', 'resetPassword'
         ]);
-      backend = new FirebaseSdkAuthBackend(ref);
+      backend = new FirebaseSdkAuthBackend(app);
       auth = new FirebaseAuth(backend);
     });
 
     it('should call createUser on a db reference', () => {
       auth.createUser(credentials);
-      expect(ref.createUser)
+      expect(app.createUser)
         .toHaveBeenCalledWith(credentials, jasmine.any(Function));
     });
 
@@ -230,13 +245,13 @@ describe('FirebaseAuth', () => {
     let auth: FirebaseAuth = null;
 
     beforeEach(() => {
-      ref = jasmine.createSpyObj('ref',
+      app = jasmine.createSpyObj('ref',
         ['authWithCustomToken', 'authAnonymously', 'authWithPassword',
           'authWithOAuthPopup', 'authWithOAuthRedirect', 'authWithOAuthToken',
           'unauth', 'getAuth', 'onAuth', 'offAuth',
           'createUser', 'changePassword', 'changeEmail', 'removeUser', 'resetPassword'
         ]);
-      backend = new FirebaseSdkAuthBackend(ref);
+      backend = new FirebaseSdkAuthBackend(app);
       auth = new FirebaseAuth(backend);
     });
 
@@ -291,7 +306,7 @@ describe('FirebaseAuth', () => {
 
       it('passes custom token to underlying method', () => {
         auth.login(credentials, options);
-        expect(ref.authWithCustomToken)
+        expect(app.authWithCustomToken)
           .toHaveBeenCalledWith('myToken', jasmine.any(Function), { remember: 'default' });
       });
 
@@ -316,7 +331,7 @@ describe('FirebaseAuth', () => {
       };
       it('passes options object to underlying method', () => {
         auth.login(options);
-        expect(ref.authAnonymously).toHaveBeenCalledWith(jasmine.any(Function), { remember: 'default' });
+        expect(app.authAnonymously).toHaveBeenCalledWith(jasmine.any(Function), { remember: 'default' });
       });
 
       it('will reject the promise if authentication fails', (done: any) => {
@@ -348,14 +363,14 @@ describe('FirebaseAuth', () => {
         };
         let auth = new FirebaseAuth(backend, config);
         auth.login(credentials);
-        expect(ref.authWithPassword).toHaveBeenCalledWith(credentials,
+        expect(app.authWithPassword).toHaveBeenCalledWith(credentials,
           jasmine.any(Function),
           { provider: config.provider });
       });
 
       it('passes options and credentials object to underlying method', () => {
         auth.login(credentials, options);
-        expect(ref.authWithPassword).toHaveBeenCalledWith(
+        expect(app.authWithPassword).toHaveBeenCalledWith(
           credentials,
           jasmine.any(Function),
           { remember: options.remember }
@@ -385,7 +400,7 @@ describe('FirebaseAuth', () => {
         let customOptions = Object.assign({}, options);
         customOptions.scope = ['email'];
         auth.login(customOptions);
-        expect(ref.authWithOAuthPopup).toHaveBeenCalledWith(
+        expect(app.authWithOAuthPopup).toHaveBeenCalledWith(
           'github',
           jasmine.any(Function),
           { scope: ['email'] }
@@ -415,7 +430,7 @@ describe('FirebaseAuth', () => {
         let customOptions = Object.assign({}, options);
         customOptions.scope = ['email'];
         auth.login(customOptions);
-        expect(ref.authWithOAuthRedirect).toHaveBeenCalledWith(
+        expect(app.authWithOAuthRedirect).toHaveBeenCalledWith(
           'github',
           jasmine.any(Function),
           { scope: ['email'] }
@@ -448,7 +463,7 @@ describe('FirebaseAuth', () => {
       };
       it('passes provider, token, and options object to underlying method', () => {
         auth.login(credentials, options);
-        expect(ref.authWithOAuthToken).toHaveBeenCalledWith(
+        expect(app.authWithOAuthToken).toHaveBeenCalledWith(
           'github',
           token,
           jasmine.any(Function),
@@ -465,7 +480,7 @@ describe('FirebaseAuth', () => {
           "oauth_token_secret": "<ACCESS-TOKEN-SECRET>"
         };
         auth.login(twitterCredentials, customOptions);
-        expect(ref.authWithOAuthToken).toHaveBeenCalledWith(
+        expect(app.authWithOAuthToken).toHaveBeenCalledWith(
           'twitter',
           twitterCredentials,
           jasmine.any(Function),
@@ -493,14 +508,14 @@ describe('FirebaseAuth', () => {
 
     describe('unauth()', () => {
       it('will call unauth() on the backing ref if logged in', () => {
-        (<any>ref).getAuth.and.returnValue({ provider: 'twitter' }); auth.logout();
-        expect(ref.unauth).toHaveBeenCalled();
+        (<any>app).getAuth.and.returnValue({ provider: 'twitter' }); auth.logout();
+        expect(app.unauth).toHaveBeenCalled();
       });
 
       it('will NOT call unauth() on the backing ref if NOT logged in', () => {
-        (<any>ref).getAuth.and.returnValue(null);
+        (<any>app).getAuth.and.returnValue(null);
         auth.logout();
-        expect(ref.unauth).not.toHaveBeenCalled();
+        expect(app.unauth).not.toHaveBeenCalled();
       });
     });
   });
