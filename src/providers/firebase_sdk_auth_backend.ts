@@ -26,7 +26,9 @@ export class FirebaseSdkAuthBackend extends AuthBackend {
 
   onAuth(): Observable<FirebaseUser> {
     // TODO: assumes this will accept an RxJS observer
-    return Observable.create(this._fbAuth.onAuthStateChanged);
+    return Observable.create((observer: Observer<FirebaseUser>) => {
+      return this._fbAuth.onAuthStateChanged(observer);
+    });
   }
 
   unauth(): void {

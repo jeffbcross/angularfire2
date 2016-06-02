@@ -55,7 +55,7 @@ export const COMMON_PROVIDERS: any[] = [
 export const FIREBASE_PROVIDERS:any[] = [
   COMMON_PROVIDERS,
   provide(AuthBackend, {
-    useFactory: (ref: FirebaseRef) => new FirebaseSdkAuthBackend(ref, false),
+    useFactory: (app: FirebaseApplication) => new FirebaseSdkAuthBackend(app, false),
     deps: [FirebaseApp]
   })
 ];

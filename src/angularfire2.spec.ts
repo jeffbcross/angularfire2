@@ -38,27 +38,39 @@ const firebaseConfig: FirebaseAppConfig = {
 
 describe('angularfire', () => {
   var subscription:Subscription;
-  const rootRef = Firebase.initializeApp(firebaseConfig).database().ref();
-  const questionsRef = rootRef.child('questions');
-  const listOfQuestionsRef = rootRef.child('list-of-questions');
+  var app: FirebaseApplication;
+  var rootRef: FirebaseRef;
+  var questionsRef: FirebaseRef;
+  var listOfQuestionsRef: FirebaseRef;
+  var angularFire2: AngularFire;
 
-  afterEach((done:any) => {
-    // Clear out the Firebase to prevent leaks between tests
-    rootRef.remove(done);
+  beforeEachProviders(() => [FIREBASE_PROVIDERS, defaultFirebase(firebaseConfig)]);
+
+  describe('things', () => {
+
+  })
+  beforeEach(inject([FirebaseApp, AngularFire], (firebaseApp: FirebaseApplication, _af: AngularFire) => {
+    angularFire2 = _af;
+    app = firebaseApp;
+    rootRef = app.database().ref();
+    questionsRef = rootRef.child('questions');
+    listOfQuestionsRef = rootRef.child('list-of-questions');
+  }));
+
+  afterEach((done) => {
+    rootRef.remove()
     if(subscription && !subscription.isUnsubscribed) {
       subscription.unsubscribe();
     }
+    app.delete().then(done, done.fail);
   });
 
 
   it('should be injectable via FIREBASE_PROVIDERS', () => {
-    var injector = ReflectiveInjector.resolveAndCreate([FIREBASE_PROVIDERS, defaultFirebase(firebaseConfig)]);
-    expect(injector.get(AngularFire)).toBeAnInstanceOf(AngularFire);
+    expect(angularFire2).toBeAnInstanceOf(AngularFire);
   });
 
   describe('.auth', () => {
-    beforeEachProviders(() => [FIREBASE_PROVIDERS, defaultFirebase(firebaseConfig)]);
-
     it('should be an instance of AuthService', inject([AngularFire], (af:AngularFire) => {
       expect(af.auth).toBeAnInstanceOf(FirebaseAuth);
     }));
@@ -66,22 +78,14 @@ describe('angularfire', () => {
 
 
   describe('.database', () => {
-    beforeEachProviders(() => [FIREBASE_PROVIDERS, defaultFirebase(firebaseConfig)]);
-
-    it('should be an instance of AuthService', inject([AngularFire], (af:AngularFire) => {
+    it('should be an instance of Database', inject([AngularFire], (af:AngularFire) => {
       expect(af.database).toBeAnInstanceOf(FirebaseDatabase);
     }));
   });
 
-  describe('FIREBASE_REF', () => {
-    it('should provide a FirebaseRef for the FIREBASE_REF binding', () => {
-      var injector = ReflectiveInjector.resolveAndCreate([
-        provide(FirebaseConfig, {
-          useValue: firebaseConfig
-        }),
-        FIREBASE_PROVIDERS
-      ]);
-      expect(typeof injector.get(FirebaseApp).on).toBe('function');
+  describe('FirebaseApp', () => {
+    it('should provide a FirebaseApp for the FirebaseApp binding', () => {
+      expect(typeof app.delete).toBe('function');
     })
   });
 
@@ -90,12 +94,5 @@ describe('angularfire', () => {
       const provider = defaultFirebase(firebaseConfig);
       expect(provider).toBeAnInstanceOf(Provider);
     });
-
-
-    it('should inject a FIR reference', () => {
-      const injector = ReflectiveInjector.resolveAndCreate([defaultFirebase(firebaseConfig), FIREBASE_PROVIDERS]);
-      expect(injector.get(FirebaseApp).toString()).toBe(firebaseConfig);
-    });
   });
-
 });
